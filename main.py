@@ -10,25 +10,23 @@ FILE_6 = "f_libraries_of_the_world.in"
 def output_result(libs, file_name):
     output_file = file_name.replace('.in', '.out')
     with open(output_file, 'w+') as f:
-        # print(len(libs))
         f.write(str(len(libs)) + "\n")
-        for idx, lib in enumerate(libs):
-            # print("{} {}".format(idx, lib["nb_books"]))
-            f.write("{} {}\n".format(lib["id"], lib["nb_books"]))
-            f.write(" ".join(lib["books"]) + "\n")
-            # print(" ".join(lib["books"]))
+        for lib in libs:
+            if lib["keep"]:
+                f.write("{} {}\n".format(lib["id"], lib["nb_books"]))
+                f.write(" ".join(lib["books"]) + "\n")
 
 
-def cut_out_of_day_lib(libs, nb_days):
-    total = 0
-    for idx, lib in enumerate(libs):
-        total += lib["signup"]
-        if total >= nb_days:
-            return libs[0:idx + 1]
-    return libs
+# def cut_out_of_day_lib(libs, nb_days):
+#     total = 0
+#     for idx, lib in enumerate(libs):
+#         total += lib["signup"]
+#         if total >= nb_days:
+#             return libs[0:idx + 1]
+#     return libs
 
 
-def remove_duplicate(libs):
+def remove_duplicate(libs, nb_days):
     books = []
     for lib in libs:
         new_books = []
@@ -36,9 +34,24 @@ def remove_duplicate(libs):
             if book not in books:
                 books.append(book)
                 new_books.append(book)
-        lib["books"] = new_books
-        lib["nb_books"] = len(new_books)
+        if len(new_books) > 0:
+            lib["books"] = new_books
+            lib["nb_books"] = len(new_books)
+            lib["keep"] = True
+        else:
+            lib["keep"] = False,
+            lib["books_score"] = 0
+            lib["nb_books"] = 0
+            lib["signup"] = nb_days
+            lib["b_p_day"] = nb_days
     return libs
+
+
+def calculate_books_score(books, books_score):
+    score = 0
+    for book_id in books:
+        score += int(books_score[int(book_id)])
+    return score
 
 
 def algo(file_name):
@@ -51,6 +64,7 @@ def algo(file_name):
     nb_books = int(params[0])
     nb_lib = int(params[1])
     nb_days = int(params[2])
+    books_score = content[1].replace('\n', '').split(' ')
 
     content = content[2:]
     # print(content)
@@ -58,27 +72,29 @@ def algo(file_name):
     books = []
     for idx, ligne in enumerate(content):
         params = ligne.replace('\n', '').split(' ')
+        id = idx // 2
         if idx % 2 == 0:
             libs.append({
                 "nb_books": int(params[0]),
                 "signup": int(params[1]),
                 "b_p_day": int(params[2]),
                 "books": [],
-                "id": idx // 2
+                "id": id,
+                "books_score": 0,
             })
-
         else:
-            # print(idx // 2, libs)
-            libs[idx // 2]["books"] = params
+            libs[id]["books"] = params
+            libs[id]["books_score"] = calculate_books_score(
+                params, books_score)
 
     sorted_lib = sorted(libs, key=lambda lib:
-                        (-lib["nb_books"], lib["signup"], -lib["b_p_day"]))
-    # sorted_lib = sorted(libs, key=lambda lib: lib["nb_books"])
-    # print(sorted_lib)
-    #max_day_lib = cut_out_of_day_lib(sorted_lib, nb_days)
-    no_duplicate = remove_duplicate(sorted_lib)
-    # print(max_day_lib)
+                        (-lib["books_score"], -lib["nb_books"], lib["signup"], -lib["b_p_day"]))
+    no_duplicate = remove_duplicate(sorted_lib, nb_days)
     output_result(no_duplicate, file_name)
+
+    sorted_lib_bis = sorted(no_duplicate, key=lambda lib:
+                            (-lib["books_score"], -lib["nb_books"], lib["signup"], -lib["b_p_day"]))
+    output_result(sorted_lib_bis, file_name + ".bis")
 
 
 def main():
