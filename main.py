@@ -26,7 +26,7 @@ def output_result(libs, file_name):
 #     return libs
 
 
-def remove_duplicate(libs, nb_days):
+def remove_duplicate(libs, nb_days, books_score):
     books = []
     for lib in libs:
         new_books = []
@@ -38,6 +38,7 @@ def remove_duplicate(libs, nb_days):
             lib["books"] = new_books
             lib["nb_books"] = len(new_books)
             lib["keep"] = True
+            lib["book_score"] = calculate_books_score(new_books, books_score)
         else:
             lib["keep"] = False,
             lib["books_score"] = 0
@@ -89,7 +90,7 @@ def algo(file_name):
 
     sorted_lib = sorted(libs, key=lambda lib:
                         (-lib["books_score"], -lib["nb_books"], lib["signup"], -lib["b_p_day"]))
-    no_duplicate = remove_duplicate(sorted_lib, nb_days)
+    no_duplicate = remove_duplicate(sorted_lib, nb_days, books_score)
     output_result(no_duplicate, file_name)
 
     sorted_lib_bis = sorted(no_duplicate, key=lambda lib:
